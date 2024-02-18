@@ -4,6 +4,27 @@ import OCR from "@/components/ocr";
 import { ChangeEvent, useState } from "react";
 import { requestWithBase64 } from "./actions";
 
+type CellWord = {
+  inferText: string;
+  rowIndex: number;
+  columnIndex: number;
+};
+
+type CellTextLine = {
+  cellWords: CellWord[];
+};
+
+type Cell = {
+  cellTextLines: CellTextLine[];
+  rowIndex: number;
+  columnIndex: number;
+  columnSpan: number;
+};
+
+type Table = {
+  cells: Cell[];
+};
+
 export default function NaverClovaOCR() {
   const [img, setImg] = useState<string | null>(null);
   const [text, setText] = useState([]);
@@ -46,7 +67,7 @@ export default function NaverClovaOCR() {
       reader.onerror = (error) => reject(error);
     });
   };
-
+  console.log("데이터", text);
   return (
     <>
       <OCR />
@@ -75,15 +96,56 @@ export default function NaverClovaOCR() {
           <p>결과 ➡</p>
         </div>
         <div className="w-[45%] h-[800px] p-5 px-10">
-          {isProcessing ? (
-            <p className="text-[40px]">텍스트 추출중...</p>
-          ) : (
-            text.map((v: any, idx: any) => (
-              <span key={idx}>&nbsp;{v.inferText}&nbsp;</span>
-            ))
-          )}
+          {text.map((table: Table, i) => (
+            <div key={i} className="mb-5">
+              <h3 className="mb-2">Table {i + 1}</h3>
+              <table className="table-auto">
+                <tbody>
+                  {Array.from(
+                    {
+                      length:
+                        Math.max(...table.cells.map((cell) => cell.rowIndex)) +
+                        1,
+                    },
+                    (_, rowIndex) => (
+                      <tr key={rowIndex} className="border">
+                        {table.cells
+                          .filter((cell) => cell.rowIndex === rowIndex)
+                          .sort((a, b) => a.columnIndex - b.columnIndex)
+                          .map((cell: Cell, j) => (
+                            <td
+                              key={j}
+                              className="border p-2 text-left whitespace-normal overflow-auto"
+                              colSpan={cell.columnSpan}
+                            >
+                              {cell.cellTextLines.length > 0 &&
+                                cell.cellTextLines[0].cellWords
+                                  .map(
+                                    (cellWord: CellWord, k) =>
+                                      cellWord.inferText
+                                  )
+                                  .join(" ")}
+                            </td>
+                          ))}
+                      </tr>
+                    )
+                  )}
+                </tbody>
+              </table>
+            </div>
+          ))}
         </div>
       </div>
     </>
   );
+}
+
+{
+  /* {isProcessing ? (
+  <p className="text-[40px]">텍스트 추출중...</p>
+) : (
+  text.map((v: any, idx: any) => (
+    <span key={idx}>&nbsp;{v.cells}&nbsp;</span>
+  ))
+)} */
 }
