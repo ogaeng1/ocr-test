@@ -3,7 +3,7 @@
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 
-export async function requestWithBase64(base64: string, ex: string) {
+export async function requestWithBase64(base64: any, ex: string) {
   const apiUrl =
     "https://zazwj68mkz.apigw.ntruss.com/custom/v1/28249/f4a4ba37b2e383f43ddc7d668482e2c639aa464fe7f91f1029b4b00acf75e82a/general"; // APIGW Invoke URL
   const secretKey = "b1luUHZ0UE1JWWhWdkFOa1RlR0x2b0NNUElkeGF1cUE=";

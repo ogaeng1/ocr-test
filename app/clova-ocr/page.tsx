@@ -4,6 +4,8 @@ import OCR from "@/components/ocr";
 import { ChangeEvent, useState } from "react";
 import { requestWithBase64 } from "./actions";
 
+import Resizer from "react-image-file-resizer";
+
 type CellWord = {
   inferText: string;
   rowIndex: number;
@@ -30,6 +32,26 @@ export default function NaverClovaOCR() {
   const [text, setText] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const resizerFile = (file: File): Promise<string> =>
+    new Promise((res) => {
+      Resizer.imageFileResizer(
+        file,
+        1500,
+        1500,
+        "JPEG",
+        80,
+        0,
+        (uri) => {
+          if (typeof uri === "string") {
+            res(uri);
+          } else {
+            throw new Error("리사이징된 이미지 형식이 올바르지 않습니다.");
+          }
+        },
+        "base64"
+      );
+    });
+
   const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
 
@@ -41,8 +63,9 @@ export default function NaverClovaOCR() {
 
       try {
         setIsProcessing(true);
-        const base64 = await getBase64(file);
-        const extractedText = await requestWithBase64(base64, ex);
+        const base64 = await resizerFile(file);
+        const base64Data = base64.split(",")[1];
+        const extractedText = await requestWithBase64(base64Data, ex);
         setText(extractedText);
       } catch (error) {
         console.error("이미지 텍스트 추출 실패:", error);
@@ -53,21 +76,40 @@ export default function NaverClovaOCR() {
     }
   };
 
-  const getBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        if (typeof reader.result === "string") {
-          resolve(reader.result.split(",")[1]);
-        } else {
-          reject(new Error("Invalid image format"));
-        }
-      };
-      reader.onerror = (error) => reject(error);
-    });
-  };
+  // const handleUpload = async (imgUrl: string) => {
+  //   setImg(imgUrl);
+
+  //   const ex = imgUrl.split(".")[1];
+
+  //   try {
+  //     setIsProcessing(true);
+  //     const extractedText = await requestWithBase64(imgUrl, ex); // base64 데이터 전체를 전달
+  //     setText(extractedText);
+  //   } catch (error) {
+  //     console.error("이미지 텍스트 추출 실패:", error);
+  //     alert("이미지 텍스트 추출에 실패했습니다.");
+  //   } finally {
+  //     setIsProcessing(false);
+  //     console.log("base64 값", imgUrl);
+  //   }
+  // };
+
+  // const getBase64 = (file: File): Promise<string> => {
+  //   return new Promise((resolve, reject) => {
+  //     const reader = new FileReader();
+  //     reader.readAsDataURL(file);
+  //     reader.onload = () => {
+  //       if (typeof reader.result === "string") {
+  //         resolve(reader.result.split(",")[1]);
+  //       } else {
+  //         reject(new Error("Invalid image format"));
+  //       }
+  //     };
+  //     reader.onerror = (error) => reject(error);
+  //   });
+  // };
   console.log("데이터", text);
+
   return (
     <>
       <OCR />
